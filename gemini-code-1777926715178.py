@@ -6,7 +6,7 @@ try:
     # Use 'gemini-1.5-flash' - this is the most current stable name
     model = genai.GenerativeModel('gemini-1.5-flash')
     
-except Exception: # Missing the 'as e' part!
+except Exception as e: # This tells Python: "Call the error 'e'"
     st.error(f"Setup Error: {e}")
     st.stop()
 # --- 4. THE ENGINE ---
