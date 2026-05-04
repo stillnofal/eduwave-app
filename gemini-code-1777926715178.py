@@ -6,10 +6,9 @@ try:
     # Use 'gemini-1.5-flash' - this is the most current stable name
     model = genai.GenerativeModel('gemini-1.5-flash')
     
-except Exception as e:
+except Exception: # Missing the 'as e' part!
     st.error(f"Setup Error: {e}")
     st.stop()
-
 # --- 4. THE ENGINE ---
 uploaded_file = st.file_uploader("Drop your PDF here", type=["pdf"])
 
