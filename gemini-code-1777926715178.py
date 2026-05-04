@@ -1,26 +1,34 @@
-# --- 3. SECURE AI SETUP ---
+import streamlit as st
+import google.generativeai as genai
+from pypdf import PdfReader
+
+# --- 1. UI DESIGN ---
+st.set_page_config(page_title="EduWave", page_icon="🌊")
+st.title("🌊 EduWave")
+st.subheader("Let's Learn New Stuff!")
+
+# --- 2. SECURE AI SETUP ---
 try:
     API_KEY = st.secrets["GEMINI_API_KEY"]
     genai.configure(api_key=API_KEY)
-    
-    # Use 'gemini-1.5-flash' - this is the most current stable name
     model = genai.GenerativeModel('gemini-1.5-flash')
-    
-except Exception as e: # This tells Python: "Call the error 'e'"
+except Exception as e:
     st.error(f"Setup Error: {e}")
     st.stop()
-# --- 4. THE ENGINE ---
+
+# --- 3. THE ENGINE ---
 uploaded_file = st.file_uploader("Drop your PDF here", type=["pdf"])
 
 if uploaded_file:
     with st.spinner("🧠 Analyzing your material..."):
         try:
+            # Step A: Read PDF
             reader = PdfReader(uploaded_file)
             full_text = ""
             for page in reader.pages[:10]: 
                 full_text += page.extract_text() or ""
             
-            # This is the part from your screenshot!
+            # Step B: Create Prompt
             prompt = f"""
             You are an expert tutor. Analyze the following text and provide:
             1. **Key Concepts:** 3-5 bullet points summarizing the core ideas.
@@ -29,12 +37,13 @@ if uploaded_file:
             Text: {full_text[:15000]}
             """
             
-            # Using a more robust generation call
+            # Step C: Generate AI Response
             response = model.generate_content(prompt)
             
+            # Step D: Display Results
             st.success("✅ Analysis Complete!")
             with st.expander("📖 View Your Crash Course", expanded=True):
                 st.markdown(response.text)
                 
         except Exception as e:
-            st.error(f"Oops! Something went wrong: {e}")
+            st.error(f"Error during analysis: {e}")
