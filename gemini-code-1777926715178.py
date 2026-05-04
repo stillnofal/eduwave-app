@@ -11,7 +11,7 @@ st.subheader("Let's Learn New Stuff!")
 try:
     API_KEY = st.secrets["GEMINI_API_KEY"]
     genai.configure(api_key=API_KEY)
-    model = genai.GenerativeModel('gemini-2.0')
+    model = genai.GenerativeModel('gemini-2.0-flash')
 except Exception as e:
     st.error(f"Setup Error: {e}")
     st.stop()
