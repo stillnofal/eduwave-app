@@ -26,88 +26,100 @@ def set_custom_styles():
         .stApp {{ background-color: #0F0F13; }}
         [data-testid="stHeader"], [data-testid="stToolbar"] {{ display: none; }}
 
-        /* Header Fix: No more overlapping */
-        .header-container {{
-            margin-top: 50px;
-            margin-bottom: 50px;
-        }}
+        /* Header Layout */
+        .header-container {{ margin-top: 60px; margin-bottom: 40px; text-align: left; }}
         .aura-greeting {{
             font-family: {THEME_CONFIG['FONT_HEADER']};
-            font-size: 3.5rem;
+            font-size: 3.8rem;
             color: #FFFFFF;
             margin: 0;
-            line-height: 1.1;
+            letter-spacing: -1px;
         }}
         .aura-date {{
             font-family: {THEME_CONFIG['FONT_BODY']};
-            font-size: 0.9rem;
-            color: #666;
-            letter-spacing: 4px;
+            font-size: 0.85rem;
+            color: #555;
+            letter-spacing: 5px;
             text-transform: uppercase;
-            margin-top: 10px;
+            margin-top: 5px;
         }}
 
-        /* Date Strip - Clean & Minimal */
-        .date-strip {{
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 60px;
-        }}
-        .date-item {{ text-align: center; color: #333; transition: 0.3s; }}
-        .date-item.active {{ color: #FFF; }}
-        .date-day {{ font-size: 0.7rem; text-transform: uppercase; font-weight: 600; margin-bottom: 5px; }}
-        .date-num {{ font-size: 1.6rem; font-family: {THEME_CONFIG['FONT_HEADER']}; }}
+        /* Date Strip */
+        .date-strip {{ display: flex; justify-content: space-between; margin-bottom: 50px; padding: 0 10px; }}
+        .date-item {{ text-align: center; color: #222; }}
+        .date-item.active {{ color: #FFF; border-bottom: 1px solid #FFF; padding-bottom: 10px; }}
+        .date-day {{ font-size: 0.65rem; text-transform: uppercase; font-weight: 600; margin-bottom: 8px; letter-spacing: 1px; }}
+        .date-num {{ font-size: 1.5rem; font-family: {THEME_CONFIG['FONT_HEADER']}; }}
 
-        /* Savee.jpg Inspired Cards */
+        /* Premium Task Cards */
         .task-card {{
-            background-image: linear-gradient(rgba(0,0,0,0.75), rgba(0,0,0,0.75)), url('{THEME_CONFIG['BG_IMAGE_URL']}');
+            background-image: linear-gradient(rgba(0,0,0,0.8), rgba(0,0,0,0.8)), url('{THEME_CONFIG['BG_IMAGE_URL']}');
             background-size: cover;
             background-position: center;
-            border-radius: 24px;
-            padding: 30px;
+            border-radius: 30px;
+            padding: 35px;
             margin-bottom: 25px;
             border: 1px solid rgba(255,255,255,0.03);
         }}
         .task-title {{
             font-family: {THEME_CONFIG['FONT_HEADER']};
-            font-size: 2.2rem;
+            font-size: 2.4rem;
             color: #FFFFFF;
-            margin-bottom: 20px;
+            margin-bottom: 25px;
+            line-height: 1.2;
         }}
         .time-row {{
             display: flex;
             justify-content: space-between;
-            border-top: 1px solid rgba(255,255,255,0.1);
-            padding-top: 15px;
+            border-top: 1px solid rgba(255,255,255,0.08);
+            padding-top: 20px;
         }}
-        .time-box {{ color: #888; font-size: 0.9rem; }}
-        .time-label {{ color: #444; text-transform: uppercase; font-size: 0.65rem; letter-spacing: 1px; }}
-        .time-val {{ color: #AAA; font-size: 1.1rem; margin-top: 2px; }}
+        .time-label {{ color: #444; text-transform: uppercase; font-size: 0.6rem; letter-spacing: 2px; font-weight: 600; }}
+        .time-val {{ color: #999; font-size: 1.2rem; margin-top: 4px; font-weight: 300; }}
 
-        /* Custom Delete Button */
+        /* Delete Button - Floating right */
         .stButton>button {{
-            background-color: rgba(255,255,255,0.05) !important;
-            border: none !important;
+            background-color: transparent !important;
+            border: 1px solid #222 !important;
             color: #444 !important;
-            border-radius: 12px !important;
-            transition: 0.2s;
+            border-radius: 50% !important;
+            width: 35px;
+            height: 35px;
+            font-size: 0.8rem !important;
         }}
-        .stButton>button:hover {{ color: #ff4b4b !important; background-color: rgba(255,0,0,0.1) !important; }}
+        .stButton>button:hover {{ color: #ff4b4b !important; border-color: #ff4b4b !important; }}
     </style>
     """
     st.markdown(css, unsafe_allow_html=True)
 
 # ==========================================
-# 3. LOGIC & DATA
+# 3. SMART DATA HANDLING (PREVENTS KEYERROR)
 # ==========================================
 def handle_data():
+    """Migrates old task formats and loads schedule."""
+    tasks = []
     if os.path.exists(DATA_FILE):
-        with open(DATA_FILE, "r") as f: return json.load(f)
-    return [{"id": 1, "title": "Deep Work", "start": "09:00", "end": "11:30", "phase": "Focus Phase"}]
+        with open(DATA_FILE, "r") as f:
+            tasks = json.load(f)
+    
+    # Auto-migration logic for old data
+    for t in tasks:
+        if "start" not in t or "end" not in t:
+            raw_time = t.get("time", "00:00 - 00:00")
+            parts = raw_time.split(" - ")
+            t["start"] = parts[0] if len(parts) > 0 else "00:00"
+            t["end"] = parts[1] if len(parts) > 1 else "00:00"
+    
+    if not tasks:
+        tasks = [{"id": 1, "title": "New Beginning", "start": "09:00", "end": "10:00", "phase": "Setup"}]
+    
+    return tasks
 
 def render_ui():
     set_custom_styles()
-    if 'tasks' not in st.session_state: st.session_state.tasks = handle_data()
+    if 'tasks' not in st.session_state:
+        st.session_state.tasks = handle_data()
+    
     now = datetime.now()
 
     # --- Header ---
@@ -129,14 +141,14 @@ def render_ui():
 
     # --- Task Cards ---
     for idx, t in enumerate(st.session_state.tasks):
-        col1, col2 = st.columns([10, 1])
+        col1, col2 = st.columns([12, 1])
         with col1:
             st.markdown(f"""
             <div class='task-card'>
                 <div class='task-title'>{t['title']}</div>
                 <div class='time-row'>
-                    <div class='time-box'><div class='time-label'>Start</div><div class='time-val'>{t['start']}</div></div>
-                    <div class='time-box' style='text-align:right;'><div class='time-label'>End</div><div class='time-val'>{t['end']}</div></div>
+                    <div><div class='time-label'>Start</div><div class='time-val'>{t['start']}</div></div>
+                    <div style='text-align:right;'><div class='time-label'>End</div><div class='time-val'>{t['end']}</div></div>
                 </div>
             </div>
             """, unsafe_allow_html=True)
@@ -147,14 +159,19 @@ def render_ui():
                 with open(DATA_FILE, "w") as f: json.dump(st.session_state.tasks, f)
                 st.rerun()
 
-    # --- Add Task (Expander) ---
-    with st.expander("+ New Task"):
+    # --- Form ---
+    with st.expander("+ Add Item"):
         with st.form("new_task"):
             title = st.text_input("Task Title")
-            s_time = st.time_input("Start")
-            e_time = st.time_input("End")
-            if st.form_submit_button("Add"):
-                st.session_state.tasks.append({"id": len(st.session_state.tasks)+1, "title": title, "start": s_time.strftime('%H:%M'), "end": e_time.strftime('%H:%M'), "phase": ""})
+            s_time = st.time_input("Start", value=datetime.now())
+            e_time = st.time_input("End", value=datetime.now())
+            if st.form_submit_button("Add Task"):
+                st.session_state.tasks.append({
+                    "id": len(st.session_state.tasks)+1, 
+                    "title": title, 
+                    "start": s_time.strftime('%H:%M'), 
+                    "end": e_time.strftime('%H:%M')
+                })
                 with open(DATA_FILE, "w") as f: json.dump(st.session_state.tasks, f)
                 st.rerun()
 
