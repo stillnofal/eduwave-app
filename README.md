@@ -1,1 +1,1 @@
-# eduwave-app
+aura-schedule
